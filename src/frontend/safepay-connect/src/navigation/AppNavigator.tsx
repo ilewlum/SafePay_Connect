@@ -76,10 +76,10 @@ const MainTabs = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Wallet" component={WalletScreen} />
-      <Tab.Screen name="Payment" component={PaymentRequestScreen} />
       <Tab.Screen name="Security" component={ScamDetectorScreen} />
+      <Tab.Screen name="Payment" component={PaymentRequestScreen} />
       <Tab.Screen name="Confirm" component={PaymentConfirmationScreen} />
+      <Tab.Screen name="Wallet" component={WalletScreen} />
     </Tab.Navigator>
   );
 };
