@@ -242,6 +242,36 @@ app.post("/createTransaction", authenticateToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+app.get("/getTransaction/:id", authenticateToken, async (req, res) => {
+  try {
+    const transactionID = req.params.id;
+
+    // Fetch the transaction document
+    const transactionDoc = await db.collection("transaction").doc(transactionID).get();
+
+    if (!transactionDoc.exists) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    const transactionData = transactionDoc.data();
+    // Return transaction details
+    res.status(200).json({
+      id: transactionDoc.id,
+      senderID: transactionData.senderID,
+      recieverID: transactionData.recieverID,
+      amount: transactionData.amount,
+      type: transactionData.type,
+      walletNumber: transactionData.walletNumber,
+      reference: transactionData.reference,
+      status: transactionData.status,
+      timestamp: transactionData.timestamp
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 // #endregion
 
 // #region Message routes
