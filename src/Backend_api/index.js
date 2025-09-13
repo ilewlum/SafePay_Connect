@@ -17,6 +17,7 @@ admin.initializeApp({
 const db = admin.firestore();
 // #endregion
 // #region Routes
+
 // #region User routes
 app.get("/", (req, res) => {
   res.send("Express + Firestore API running 🚀");
@@ -108,6 +109,91 @@ app.post("/login", async (req, res) => {
     res.status(500).send({ error: error.message });
   }
 });
+// #endregion
+
+// #region Wallet routes
+app.post("/createWallet", authenticateToken, async (req, res) => {
+    try {
+      const {provider,type, walletNumber} = req.body;
+      const userID = req.user.userID;
+      await db.collection("wallet").doc(uuidv4()).set({
+            userID : userID,
+            provider: provider,
+            type: type,
+            walletNumber: walletNumber,
+            history: []      
+        })
+
+        res.status(201).json({
+            message: "Wallet successfully created"
+        });
+    } 
+    catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/viewWallet", authenticateToken, async (req, res) => {
+  try {
+    //find the wallet for that user
+    const userID = req.user.userID;
+    const walletQuery = await db.collection("wallet").where("userID", "==", userID).get();
+    //check if wallet exists
+    if (walletQuery.empty) {
+      return res.status(404).send("Wallet not found");
+    }
+    
+    const walletDoc = walletQuery.docs[0];
+    const walletData = walletDoc.data();
+
+    // Resolve transactions from history
+    const transactions = await Promise.all(
+      (walletData.history || []).map(async (txId) => {
+        const txDoc = await db.collection("transaction").doc(txId).get();
+        return txDoc.exists ? { id: txDoc.id, ...txDoc.data() } : null;
+      })
+    );
+    //Return wallet information
+    res.status(200).json({
+      provider: walletData.provider,
+      walletNumber: walletData.walletNumber,
+      transactions
+    });
+
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+app.patch("/updateWallet", authenticateToken, async (req, res) => {
+  try {
+    const { provider, type, walletNumber } = req.body;
+    const userID = req.user.userID;
+    const walletQuery = await db.collection("wallet").where("userID", "==", userID).get();
+    if (walletQuery.empty) {
+      return res.status(404).json({ message: "Wallet not found" });
+    }
+    const walletDoc = walletQuery.docs[0];
+    await db.collection("wallet").doc(walletDoc.id).update({
+      provider: provider || walletDoc.data().provider,
+      type: type || walletDoc.data().type,
+      walletNumber: walletNumber || walletDoc.data().walletNumber
+    });
+    const updatedWallet = await db.collection("wallet").doc(walletDoc.id).get();
+    res.status(200).json({ message: "Wallet updated successfully", wallet: updatedWallet.data() });
+  } catch (error) {
+    res.status(500).json({ error: error.message }); 
+  }
+  
+});
+// #endregion
+
+// #region Transaction routes
+
+// #endregion
+
+// #region Message routes
+
 // #endregion
 
 // #endregion
