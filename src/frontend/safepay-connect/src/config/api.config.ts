@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 
 // Backend URL Configuration
 // Option 1: Local testing (update IP as needed)
-const LOCAL_IP = '172.16.1.124';
+const LOCAL_IP = '196.42.64.255';
 
 // Option 2: Deployed backend (update when deployed)
 const PRODUCTION_URL = 'https://your-backend.render.com'; // Update when deployed!
@@ -15,8 +15,8 @@ const getApiUrl = () => {
     // Choose your backend for development:
     // ===================================
 
-    // return `http://${LOCAL_IP}:3000`; // Local network (Expo Go on same WiFi)
-    return NGROK_URL; // ← Using ngrok for expo.dev testing
+    return `http://${LOCAL_IP}:3000`; // Local network (Expo Go on same WiFi)
+    //return NGROK_URL; // ← Using ngrok for expo.dev testing
     // return PRODUCTION_URL; // Deployed backend (when available)
   } else {
     // Production environment

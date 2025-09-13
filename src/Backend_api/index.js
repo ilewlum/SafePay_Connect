@@ -13,11 +13,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 const port = process.env.PORT || 3000;
-const privateKey = process.env.JWT_SECRET || "fhf7fjJjdhfjvnG1123"
+const privateKey = process.env.PRIVATE_KEY;
 // #endregion
 
 // #regionInitialize Firestore with service account
-const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || "safepay-connect-firebase-adminsdk-fbsvc-8175ce9093.json";
+const serviceAccountPath = JSON.parse(process.env.FIREBASE_CREDENTIALS_JSON);
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccountPath),
 });

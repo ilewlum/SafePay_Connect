@@ -130,7 +130,7 @@ const TransactionDetailScreen = () => {
           <Text style={styles.statusText}>
             {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
           </Text>
-          <Text style={styles.amountText}>R {transaction.amount.toFixed(2)}</Text>
+          <Text style={styles.amountText}>R {Number(transaction.amount)?.toFixed(2) ?? 0.00}</Text>
         </View>
 
         <View style={styles.detailsCard}>

@@ -188,6 +188,7 @@ class ApiService {
 
       if (!response.ok) {
         const error = await response.json();
+        console.error('Backend error:', response.status, response.statusText, error);
         throw new Error(error.message || 'Failed to create transaction');
       }
 

@@ -208,7 +208,7 @@ export default function WalletScreen() {
                   ]}
                 >
                   {transaction.senderID === user?.userId ? '-' : '+'}R
-                  {transaction.amount.toFixed(2)}
+                  {Number(transaction.amount)?.toFixed(2)??0.00}
                 </Text>
               </TouchableOpacity>
             ))}
