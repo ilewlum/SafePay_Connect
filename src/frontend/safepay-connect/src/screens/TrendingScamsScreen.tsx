@@ -1,8 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 export default function TrendingScamsScreen() {
+  const navigation = useNavigation();
   const scams = [
     {
       id: 1,
@@ -58,6 +60,12 @@ export default function TrendingScamsScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#2D3436" />
+          </TouchableOpacity>
           <Ionicons name="trending-up" size={40} color="#6C5CE7" />
           <Text style={styles.title}>Trending Scams</Text>
           <Text style={styles.subtitle}>Stay informed and protected</Text>
@@ -108,6 +116,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 5,
+    position: 'relative',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#F7F9FC',
   },
   title: {
     fontSize: 28,

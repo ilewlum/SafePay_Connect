@@ -56,8 +56,8 @@ const MainTabs = () => {
             iconName = focused ? 'card' : 'card-outline';
           } else if (route.name === 'Security') {
             iconName = focused ? 'shield-checkmark' : 'shield-checkmark-outline';
-          } else if (route.name === 'Support') {
-            iconName = focused ? 'headset' : 'headset-outline';
+          } else if (route.name === 'Confirm') {
+            iconName = focused ? 'checkmark-circle' : 'checkmark-circle-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -79,7 +79,7 @@ const MainTabs = () => {
       <Tab.Screen name="Wallet" component={WalletScreen} />
       <Tab.Screen name="Payment" component={PaymentRequestScreen} />
       <Tab.Screen name="Security" component={ScamDetectorScreen} />
-      <Tab.Screen name="Support" component={VoiceSupportScreen} />
+      <Tab.Screen name="Confirm" component={PaymentConfirmationScreen} />
     </Tab.Navigator>
   );
 };
