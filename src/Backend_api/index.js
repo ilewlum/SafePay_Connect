@@ -17,7 +17,7 @@ const privateKey = process.env.JWT_SECRET || "fhf7fjJjdhfjvnG1123"
 // #endregion
 
 // #regionInitialize Firestore with service account
-const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || "src/Backend_api/safepay-connect-firebase-adminsdk-fbsvc-8175ce9093.json";
+const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || "safepay-connect-firebase-adminsdk-fbsvc-8175ce9093.json";
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccountPath),
 });

@@ -8,7 +8,7 @@ const LOCAL_IP = '172.16.1.124';
 const PRODUCTION_URL = 'https://your-backend.render.com'; // Update when deployed!
 
 // Option 3: Ngrok tunnel (UPDATE THIS WITH YOUR NGROK URL)
-const NGROK_URL = 'https://your-ngrok-url.ngrok-free.app'; // ← UPDATE ME!
+const NGROK_URL = 'https://wild-papayas-sin.loca.lt'; // ← LocalTunnel URL
 
 const getApiUrl = () => {
   if (__DEV__) {
