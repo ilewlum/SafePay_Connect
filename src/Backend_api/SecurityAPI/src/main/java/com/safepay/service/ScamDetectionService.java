@@ -200,8 +200,6 @@ public class ScamDetectionService {
      * @return ScamDetectionResult containing the results of the detection.
      */
     public ScamDetectionResult detectScam(String message) {
-        // Implement detection logic here
-        // Example: basic detection using urgency keywords and banking phrases
         boolean isScam = false;
         double confidence = 0.0;
         String riskLevel = "LOW";
@@ -210,27 +208,64 @@ public class ScamDetectionService {
 
         if (message != null && !message.trim().isEmpty()) {
             String msgLower = message.toLowerCase();
+            // Urgency keywords
             for (String keyword : URGENCY_KEYWORDS) {
                 if (msgLower.contains(keyword.toLowerCase())) {
-                    detectedPatterns.add(keyword);
+                    detectedPatterns.add("Urgency keyword: " + keyword);
                     isScam = true;
                 }
             }
+            // Fake banking phrases
             for (String phrase : FAKE_BANKING_PHRASES) {
                 if (msgLower.contains(phrase.toLowerCase())) {
-                    detectedPatterns.add(phrase);
+                    detectedPatterns.add("Fake banking phrase: " + phrase);
                     isScam = true;
                 }
             }
+            // Money scam patterns
             for (String pattern : MONEY_SCAM_PATTERNS) {
                 if (msgLower.contains(pattern.toLowerCase())) {
-                    detectedPatterns.add(pattern);
+                    detectedPatterns.add("Money scam pattern: " + pattern);
                     isScam = true;
                 }
             }
-            confidence = isScam ? 0.85 : 0.1;
-            riskLevel = isScam ? "HIGH" : "LOW";
-            recommendation = isScam ? "Potential scam detected. Do not respond or share personal information." : "Message appears safe.";
+            // Suspicious URLs
+            if (SUSPICIOUS_URL_PATTERN.matcher(msgLower).find()) {
+                detectedPatterns.add("Suspicious URL detected");
+                isScam = true;
+            }
+            // Non-HTTPS links
+            if (NON_HTTPS_PATTERN.matcher(message).find()) {
+                detectedPatterns.add("Non-HTTPS link detected");
+                isScam = true;
+            }
+            // Poor grammar indicators
+            for (String indicator : POOR_GRAMMAR_INDICATORS) {
+                if (msgLower.contains(indicator.toLowerCase())) {
+                    detectedPatterns.add("Poor grammar indicator: " + indicator);
+                    isScam = true;
+                }
+            }
+            // Confidence and risk level
+            int patternCount = detectedPatterns.size();
+            if (isScam) {
+                confidence = Math.min(0.5 + 0.1 * patternCount, 1.0);
+                riskLevel = confidence >= 0.8 ? "HIGH" : confidence >= 0.5 ? "MEDIUM" : "LOW";
+                // Tailored recommendation
+                if (detectedPatterns.stream().anyMatch(p -> p.contains("URL"))) {
+                    recommendation = "Suspicious link detected. Do not click or share personal information.";
+                } else if (detectedPatterns.stream().anyMatch(p -> p.contains("banking"))) {
+                    recommendation = "Potential banking scam detected. Contact your bank through official channels.";
+                } else if (detectedPatterns.stream().anyMatch(p -> p.contains("Money scam"))) {
+                    recommendation = "Money scam detected. Ignore and delete this message.";
+                } else {
+                    recommendation = "Potential scam detected. Do not respond or share personal information.";
+                }
+            } else {
+                confidence = 0.1;
+                riskLevel = "LOW";
+                recommendation = "Message appears safe.";
+            }
         } else {
             recommendation = "Message is empty - LOW RISK.";
         }
