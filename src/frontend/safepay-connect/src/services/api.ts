@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_BASE_URL = 'http://localhost:3000'; // Change to your backend URL
+import { API_BASE_URL, API_ENDPOINTS } from '../config/api.config';
 
 interface UserData {
   name: string;
@@ -76,7 +75,7 @@ class ApiService {
   // Authentication endpoints
   async register(userData: UserData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/register`, {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.REGISTER}`, {
         method: 'POST',
         headers: this.getHeaders(false),
         body: JSON.stringify(userData),
@@ -95,7 +94,7 @@ class ApiService {
 
   async login(loginData: LoginData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.LOGIN}`, {
         method: 'POST',
         headers: this.getHeaders(false),
         body: JSON.stringify(loginData),
@@ -124,7 +123,7 @@ class ApiService {
   // Wallet endpoints
   async createWallet(walletData: WalletData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/createWallet`, {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.CREATE_WALLET}`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify(walletData),
@@ -143,7 +142,7 @@ class ApiService {
 
   async viewWallet() {
     try {
-      const response = await fetch(`${API_BASE_URL}/viewWallet`, {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.VIEW_WALLET}`, {
         method: 'GET',
         headers: this.getHeaders(),
       });
@@ -161,7 +160,7 @@ class ApiService {
 
   async updateWallet(walletData: Partial<WalletData>) {
     try {
-      const response = await fetch(`${API_BASE_URL}/updateWallet`, {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.UPDATE_WALLET}`, {
         method: 'PATCH',
         headers: this.getHeaders(),
         body: JSON.stringify(walletData),
@@ -181,7 +180,7 @@ class ApiService {
   // Transaction endpoints
   async createTransaction(transactionData: TransactionData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/createTransaction`, {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.CREATE_TRANSACTION}`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify(transactionData),
@@ -200,7 +199,7 @@ class ApiService {
 
   async getTransaction(transactionId: string) {
     try {
-      const response = await fetch(`${API_BASE_URL}/getTransaction/${transactionId}`, {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.GET_TRANSACTION}/${transactionId}`, {
         method: 'GET',
         headers: this.getHeaders(),
       });

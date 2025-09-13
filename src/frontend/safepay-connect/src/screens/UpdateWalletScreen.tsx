@@ -11,29 +11,27 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useWallet } from '../contexts/WalletContext';
 
 const UpdateWalletScreen = () => {
   const navigation = useNavigation<any>();
-  const [provider, setProvider] = useState('FNB');
-  const [type, setType] = useState('Savings');
-  const [walletNumber, setWalletNumber] = useState('');
+  const { wallet, updateWallet } = useWallet();
+  const [provider, setProvider] = useState(wallet?.provider || 'FNB');
+  const [type, setType] = useState(wallet?.type || 'Savings');
+  const [walletNumber, setWalletNumber] = useState(wallet?.walletNumber || '');
   const [loading, setLoading] = useState(false);
 
   const walletProviders = ['FNB', 'Standard Bank', 'Capitec', 'Nedbank', 'ABSA'];
-  const walletTypes = ['Savings', 'Cheque', 'Credit'];
+  const walletTypes = ['Savings', 'Cheque', 'Credit', 'Debit Card'];
 
   useEffect(() => {
-    // Load existing wallet data when component mounts
-    loadWalletData();
-  }, []);
-
-  const loadWalletData = async () => {
-    // This will be implemented with API integration
-    // const walletData = await api.getWallet();
-    // setProvider(walletData.provider);
-    // setType(walletData.type);
-    // setWalletNumber(walletData.walletNumber);
-  };
+    // Load existing wallet data when wallet changes
+    if (wallet) {
+      setProvider(wallet.provider);
+      setType(wallet.type);
+      setWalletNumber(wallet.walletNumber);
+    }
+  }, [wallet]);
 
   const handleUpdateWallet = async () => {
     if (!provider || !type || !walletNumber) {
@@ -41,14 +39,47 @@ const UpdateWalletScreen = () => {
       return;
     }
 
+    if (!wallet) {
+      Alert.alert('Error', 'No wallet found to update');
+      navigation.navigate('CreateWallet');
+      return;
+    }
+
+    // Check if anything has changed
+    if (
+      provider === wallet.provider &&
+      type === wallet.type &&
+      walletNumber === wallet.walletNumber
+    ) {
+      Alert.alert('No Changes', 'No changes were made to your wallet');
+      return;
+    }
+
+    // Validate wallet number
+    if (walletNumber.length < 10) {
+      Alert.alert('Error', 'Please enter a valid account/card number');
+      return;
+    }
+
     setLoading(true);
     try {
-      // API call will be implemented with integration
-      // const response = await api.updateWallet({ provider, type, walletNumber });
-      Alert.alert('Success', 'Wallet update will be connected to backend');
-      // navigation.navigate('Wallet');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update wallet');
+      await updateWallet({ provider, type, walletNumber });
+
+      Alert.alert(
+        'Success!',
+        'Your wallet has been updated successfully.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('Wallet'),
+          },
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert(
+        'Failed to Update Wallet',
+        error.message || 'Unable to update wallet. Please try again.'
+      );
     } finally {
       setLoading(false);
     }

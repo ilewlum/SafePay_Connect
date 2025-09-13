@@ -3,18 +3,23 @@ import admin from "firebase-admin";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import cors from "cors";
+import dotenv from "dotenv";
 
 
 // #region Load environment variables
+dotenv.config();
 const app = express();
+app.use(cors());
 app.use(express.json());
 const port = process.env.PORT || 3000;
-const privateKey = "fhf7fjJjdhfjvnG1123"
+const privateKey = process.env.JWT_SECRET || "fhf7fjJjdhfjvnG1123"
 // #endregion
 
 // #regionInitialize Firestore with service account
+const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || "src/Backend_api/safepay-connect-firebase-adminsdk-fbsvc-8175ce9093.json";
 admin.initializeApp({
-  credential: admin.credential.cert("src/Backend_api/safepay-connect-firebase-adminsdk-fbsvc-8175ce9093.json"),
+  credential: admin.credential.cert(serviceAccountPath),
 });
 
 const db = admin.firestore();

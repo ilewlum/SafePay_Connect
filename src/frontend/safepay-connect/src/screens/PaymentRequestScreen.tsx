@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { useTransaction } from '../contexts/TransactionContext';
+import { useWallet } from '../contexts/WalletContext';
 
 export default function PaymentRequestScreen() {
+  const navigation = useNavigation<any>();
+  const { createTransaction, loading, error } = useTransaction();
+  const { wallet } = useWallet();
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [reference, setReference] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const recentRequests = [
     { id: 1, recipient: '@john_doe', amount: 'R 250.00', reference: 'Lunch split', status: 'pending', date: '2 hours ago' },
@@ -32,9 +39,79 @@ export default function PaymentRequestScreen() {
     }
   };
 
-  const handleSendRequest = () => {
-    // Handle send request logic
-    console.log('Sending request:', { recipient, amount, reference });
+  const handleSendRequest = async () => {
+    // Validation
+    if (!recipient || !amount) {
+      Alert.alert('Error', 'Please enter recipient username and amount');
+      return;
+    }
+
+    if (!wallet) {
+      Alert.alert(
+        'No Wallet Found',
+        'You need to create a wallet before sending money.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Create Wallet', onPress: () => navigation.navigate('CreateWallet') },
+        ]
+      );
+      return;
+    }
+
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      Alert.alert('Error', 'Please enter a valid amount');
+      return;
+    }
+
+    // Remove @ symbol if present
+    const cleanUsername = recipient.startsWith('@') ? recipient.substring(1) : recipient;
+
+    Alert.alert(
+      'Confirm Payment',
+      `Send R${numAmount.toFixed(2)} to @${cleanUsername}?\n\nReference: ${reference || 'Payment'}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            setIsProcessing(true);
+            try {
+              const result = await createTransaction(
+                cleanUsername,
+                numAmount,
+                reference || `Payment to ${cleanUsername}`
+              );
+
+              Alert.alert(
+                'Payment Sent!',
+                `Successfully sent R${numAmount.toFixed(2)} to @${cleanUsername}`,
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      // Clear form
+                      setRecipient('');
+                      setAmount('');
+                      setReference('');
+                      // Navigate to wallet to see updated transactions
+                      navigation.navigate('Wallet');
+                    },
+                  },
+                ]
+              );
+            } catch (error: any) {
+              Alert.alert(
+                'Payment Failed',
+                error.message || 'Unable to process payment. Please try again.'
+              );
+            } finally {
+              setIsProcessing(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -92,13 +169,20 @@ export default function PaymentRequestScreen() {
             </View>
           </View>
 
-          <TouchableOpacity 
-            style={styles.sendButton}
+          <TouchableOpacity
+            style={[styles.sendButton, (isProcessing || loading) && styles.disabledButton]}
             onPress={handleSendRequest}
             activeOpacity={0.8}
+            disabled={isProcessing || loading}
           >
-            <Ionicons name="send" size={22} color="white" />
-            <Text style={styles.sendButtonText}>Send Request</Text>
+            {isProcessing || loading ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <>
+                <Ionicons name="send" size={22} color="white" />
+                <Text style={styles.sendButtonText}>Send Payment</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -226,6 +310,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginLeft: 10,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   recentSection: {
     paddingHorizontal: 20,

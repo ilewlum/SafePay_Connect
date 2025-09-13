@@ -29,14 +29,24 @@ const LoginScreen = () => {
       return;
     }
 
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
     setLoading(true);
     try {
-      // For demo purposes, accept any credentials
-      // In production, this will connect to the backend
+      // Call the real login API
       await login(email, password);
-      Alert.alert('Welcome!', 'Demo login successful. In production, this will connect to the backend.');
-    } catch (error) {
-      Alert.alert('Error', 'Login failed. Please try again.');
+      // Navigation is handled by AuthContext
+      // No alert needed for successful login
+    } catch (error: any) {
+      Alert.alert(
+        'Login Failed',
+        error.message || 'Invalid email or password. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -110,6 +120,13 @@ const LoginScreen = () => {
               onPress={handleDemoLogin}
             >
               <Text style={styles.demoButtonText}>Fill Demo Credentials</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.testButton}
+              onPress={() => navigation.navigate('TestConnection')}
+            >
+              <Text style={styles.testButtonText}>🔧 Test API Connection</Text>
             </TouchableOpacity>
 
             <View style={styles.footer}>
@@ -209,6 +226,19 @@ const styles = StyleSheet.create({
   demoButtonText: {
     color: '#4ECDC4',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  testButton: {
+    backgroundColor: '#00B894',
+    borderRadius: 12,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  testButtonText: {
+    color: 'white',
+    fontSize: 14,
     fontWeight: '600',
   },
   footer: {

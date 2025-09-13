@@ -20,7 +20,17 @@
       "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --msg-filter 'grep -v \"\"Generated with\"\" | grep -v \"\"Co-Authored-By: Claude\"\"' 152fea7..HEAD)",
       "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --msg-filter 'grep -v \"\"Generated with\"\" | grep -v \"\"Co-Authored-By: Claude\"\"' 152fea7^..152fea7)",
       "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --msg-filter 'grep -v \"\"Generated with\"\" | grep -v \"\"Co-Authored-By: Claude\"\"' --tag-name-filter cat -- --all)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Read(//c/Users/tsian/OneDrive/**)",
+      "Bash(test:*)",
+      "Bash(npm start)",
+      "Bash(npm run start:test:*)",
+      "Bash(curl:*)",
+      "Bash(node:*)",
+      "Bash(ipconfig)",
+      "Bash(netsh:*)",
+      "Bash(timeout:*)",
+      "Bash(ngrok version)"
     ],
     "deny": [],
     "ask": []

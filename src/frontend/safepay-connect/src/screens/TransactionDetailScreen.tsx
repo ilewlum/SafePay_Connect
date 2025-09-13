@@ -10,11 +10,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useTransaction } from '../contexts/TransactionContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface TransactionData {
   id: string;
   senderID: string;
-  recieverID: string;
+  receiverID: string;
   amount: number;
   type: string;
   walletNumber: string;
@@ -26,6 +28,8 @@ interface TransactionData {
 const TransactionDetailScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const { getTransaction, currentTransaction } = useTransaction();
+  const { user } = useAuth();
   const [transaction, setTransaction] = useState<TransactionData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -36,29 +40,25 @@ const TransactionDetailScreen = () => {
   const loadTransaction = async () => {
     setLoading(true);
     try {
-      // API call will be implemented with integration
-      // const transactionId = route.params?.transactionId;
-      // const response = await api.getTransaction(transactionId);
-      // setTransaction(response.data);
+      const transactionId = route.params?.transactionId;
 
-      // Mock data for now
-      setTransaction({
-        id: route.params?.transactionId || 'TX123456',
-        senderID: 'USER123',
-        recieverID: 'USER456',
-        amount: 500.00,
-        type: 'Savings',
-        walletNumber: '****1234',
-        reference: 'Payment for services',
-        status: 'completed',
-        timestamp: new Date().toISOString(),
-      });
+      if (!transactionId) {
+        throw new Error('No transaction ID provided');
+      }
+
+      const transactionData = await getTransaction(transactionId);
+      setTransaction(transactionData);
     } catch (error) {
       console.error('Failed to load transaction:', error);
+      // If we can't load the transaction, show error state
+      setTransaction(null);
     } finally {
       setLoading(false);
     }
   };
+
+  const isUserSender = transaction?.senderID === user?.userId;
+  const transactionType = isUserSender ? 'Sent' : 'Received';
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -183,7 +183,7 @@ const TransactionDetailScreen = () => {
             </View>
             <View style={styles.partyInfo}>
               <Text style={styles.partyLabel}>To</Text>
-              <Text style={styles.partyValue}>User {transaction.recieverID}</Text>
+              <Text style={styles.partyValue}>User {transaction.receiverID}</Text>
             </View>
           </View>
         </View>

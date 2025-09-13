@@ -11,16 +11,18 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useWallet } from '../contexts/WalletContext';
 
 const CreateWalletScreen = () => {
   const navigation = useNavigation<any>();
+  const { createWallet, wallet } = useWallet();
   const [provider, setProvider] = useState('');
   const [type, setType] = useState('');
   const [walletNumber, setWalletNumber] = useState('');
   const [loading, setLoading] = useState(false);
 
   const walletProviders = ['FNB', 'Standard Bank', 'Capitec', 'Nedbank', 'ABSA'];
-  const walletTypes = ['Savings', 'Cheque', 'Credit'];
+  const walletTypes = ['Savings', 'Cheque', 'Credit', 'Debit Card'];
 
   const handleCreateWallet = async () => {
     if (!provider || !type || !walletNumber) {
@@ -28,14 +30,44 @@ const CreateWalletScreen = () => {
       return;
     }
 
+    // Check if wallet already exists
+    if (wallet) {
+      Alert.alert(
+        'Wallet Exists',
+        'You already have a wallet. Would you like to update it instead?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Update', onPress: () => navigation.navigate('UpdateWallet') },
+        ]
+      );
+      return;
+    }
+
+    // Validate wallet number (basic validation)
+    if (walletNumber.length < 10) {
+      Alert.alert('Error', 'Please enter a valid account/card number');
+      return;
+    }
+
     setLoading(true);
     try {
-      // API call will be implemented with integration
-      // const response = await api.createWallet({ provider, type, walletNumber });
-      Alert.alert('Success', 'Wallet creation will be connected to backend');
-      // navigation.navigate('Wallet');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to create wallet');
+      await createWallet({ provider, type, walletNumber });
+
+      Alert.alert(
+        'Success!',
+        'Your wallet has been created successfully.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('Wallet'),
+          },
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert(
+        'Failed to Create Wallet',
+        error.message || 'Unable to create wallet. Please try again.'
+      );
     } finally {
       setLoading(false);
     }

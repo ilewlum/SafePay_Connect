@@ -21,6 +21,7 @@ import SafeRouteScreen from '../screens/SafeRouteScreen';
 import ScamDetectorScreen from '../screens/ScamDetectorScreen';
 import TrendingScamsScreen from '../screens/TrendingScamsScreen';
 import VoiceSupportScreen from '../screens/VoiceSupportScreen';
+import TestConnectionScreen from '../screens/TestConnectionScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -36,6 +37,7 @@ const AuthStack = () => {
     >
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen name="TestConnection" component={TestConnectionScreen} options={{ headerShown: true, title: 'Test API Connection' }} />
     </Stack.Navigator>
   );
 };

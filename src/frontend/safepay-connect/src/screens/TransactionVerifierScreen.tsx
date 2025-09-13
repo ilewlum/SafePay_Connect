@@ -11,11 +11,15 @@ import {
   Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTransaction } from '../contexts/TransactionContext';
+import { useWallet } from '../contexts/WalletContext';
 
 const TransactionVerifierScreen = () => {
-  const [amount, setAmount] = useState('');
-  const [recipient, setRecipient] = useState('');
-  const [reference, setReference] = useState('');
+  const { verifyTransaction, getTransaction } = useTransaction();
+  const { wallet } = useWallet();
+  const [transactionId, setTransactionId] = useState('');
+  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'verifying' | 'verified' | 'failed'>('idle');
+  const [verifiedTransaction, setVerifiedTransaction] = useState<any>(null);
   const [showQR, setShowQR] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [transactionHistory, setTransactionHistory] = useState([
@@ -30,53 +34,57 @@ const TransactionVerifierScreen = () => {
     return code;
   };
 
-  const initiateVerification = () => {
-    if (!amount || !recipient) {
-      Alert.alert('Error', 'Please fill in all required fields');
+  const handleVerifyTransaction = async () => {
+    if (!transactionId) {
+      Alert.alert('Error', 'Please enter a transaction ID to verify');
       return;
     }
 
-    const code = generateVerificationCode();
-    setShowQR(true);
-    
-    // Simulate adding to blockchain/ledger
-    setTimeout(() => {
+    setVerificationStatus('verifying');
+    try {
+      // Verify the transaction
+      const isValid = await verifyTransaction(transactionId);
+
+      if (isValid) {
+        // Get full transaction details
+        const transaction = await getTransaction(transactionId);
+        setVerifiedTransaction(transaction);
+        setVerificationStatus('verified');
+
+        Alert.alert(
+          'Transaction Verified!',
+          `Transaction ID: ${transactionId}\nAmount: R${transaction.amount.toFixed(2)}\nStatus: ${transaction.status}`,
+          [{ text: 'OK' }]
+        );
+      } else {
+        setVerificationStatus('failed');
+        Alert.alert(
+          'Verification Failed',
+          'This transaction could not be verified. It may not exist or may not belong to you.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error: any) {
+      setVerificationStatus('failed');
       Alert.alert(
-        'Transaction Secured',
-        `Verification code: ${code}\n\nShare this code with the recipient to complete the transaction.`,
-        [{ text: 'OK', onPress: () => setShowQR(false) }]
+        'Verification Error',
+        error.message || 'Unable to verify transaction. Please try again.',
+        [{ text: 'OK' }]
       );
-    }, 1000);
+    }
   };
 
-  const verifyTransaction = () => {
-    Alert.alert(
-      'Verify Transaction',
-      'Enter the verification code from the sender',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Verify',
-          onPress: () => {
-            Alert.alert('Success', 'Transaction verified successfully!');
-            const newTransaction = {
-              id: transactionHistory.length + 1,
-              recipient: recipient || 'New Transaction',
-              amount: `R ${amount || '0'}`,
-              status: 'verified',
-              date: new Date().toISOString().split('T')[0],
-            };
-            setTransactionHistory([newTransaction, ...transactionHistory]);
-            setAmount('');
-            setRecipient('');
-            setReference('');
-          },
-        },
-      ],
-    );
+  const getVerificationIcon = (status: 'idle' | 'verifying' | 'verified' | 'failed') => {
+    switch (status) {
+      case 'verified':
+        return { name: 'checkmark-circle', color: '#4ECDC4' };
+      case 'failed':
+        return { name: 'close-circle', color: '#FF6B6B' };
+      case 'verifying':
+        return { name: 'time', color: '#FFA94D' };
+      default:
+        return { name: 'shield-checkmark', color: '#6C5CE7' };
+    }
   };
 
   return (
@@ -89,56 +97,65 @@ const TransactionVerifierScreen = () => {
         </View>
 
         <View style={styles.formContainer}>
-          <Text style={styles.sectionTitle}>New Transaction</Text>
-          
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Amount (R)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="0.00"
-              value={amount}
-              onChangeText={setAmount}
-              keyboardType="numeric"
-            />
-          </View>
+          <Text style={styles.sectionTitle}>Verify Transaction</Text>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Recipient</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Name or Phone Number"
-              value={recipient}
-              onChangeText={setRecipient}
+          <View style={styles.verificationCard}>
+            <Ionicons
+              name={getVerificationIcon(verificationStatus).name as any}
+              size={48}
+              color={getVerificationIcon(verificationStatus).color}
+              style={styles.statusIcon}
             />
-          </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Reference (Optional)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Payment reference"
-              value={reference}
-              onChangeText={setReference}
-            />
-          </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Transaction ID</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter transaction ID"
+                value={transactionId}
+                onChangeText={setTransactionId}
+                autoCapitalize="none"
+              />
+            </View>
 
-          <View style={styles.buttonRow}>
             <TouchableOpacity
               style={[styles.button, styles.primaryButton]}
-              onPress={initiateVerification}
+              onPress={handleVerifyTransaction}
+              disabled={verificationStatus === 'verifying'}
             >
-              <Ionicons name="qr-code" size={20} color="white" />
-              <Text style={styles.buttonText}>Generate QR</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.button, styles.secondaryButton]}
-              onPress={verifyTransaction}
-            >
-              <Ionicons name="checkmark-circle" size={20} color="#4ECDC4" />
-              <Text style={[styles.buttonText, { color: '#4ECDC4' }]}>Verify Code</Text>
+              {verificationStatus === 'verifying' ? (
+                <>
+                  <Ionicons name="time" size={20} color="white" />
+                  <Text style={styles.buttonText}>Verifying...</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="shield-checkmark" size={20} color="white" />
+                  <Text style={styles.buttonText}>Verify Transaction</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
+
+          {verifiedTransaction && (
+            <View style={styles.resultCard}>
+              <Text style={styles.resultTitle}>Transaction Details</Text>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Amount:</Text>
+                <Text style={styles.detailValue}>R {verifiedTransaction.amount?.toFixed(2)}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Reference:</Text>
+                <Text style={styles.detailValue}>{verifiedTransaction.reference}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Status:</Text>
+                <Text style={[styles.detailValue, { color: getVerificationIcon(verificationStatus).color }]}>
+                  {verifiedTransaction.status}
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
 
         <View style={styles.historyContainer}>
@@ -335,6 +352,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     textTransform: 'uppercase',
+  },
+  verificationCard: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  statusIcon: {
+    marginBottom: 20,
+  },
+  resultCard: {
+    backgroundColor: '#F7F9FC',
+    borderRadius: 12,
+    padding: 15,
+    marginTop: 20,
+  },
+  resultTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2D3436',
+    marginBottom: 10,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: '#636E72',
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2D3436',
   },
   modalContainer: {
     flex: 1,

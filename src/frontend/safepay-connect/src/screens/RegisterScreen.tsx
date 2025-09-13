@@ -13,9 +13,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../contexts/AuthContext';
 
 const RegisterScreen = () => {
   const navigation = useNavigation<any>();
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     surname: '',
@@ -31,6 +33,7 @@ const RegisterScreen = () => {
   const handleRegister = async () => {
     const { name, surname, username, email, phoneNumber, password, confirmPassword } = formData;
 
+    // Validation
     if (!name || !surname || !username || !email || !phoneNumber || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
@@ -41,14 +44,47 @@ const RegisterScreen = () => {
       return;
     }
 
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
     setLoading(true);
     try {
-      // API call will be implemented with integration
-      // const response = await api.register(formData);
-      Alert.alert('Success', 'Registration functionality will be connected to backend');
-      // navigation.navigate('Login');
-    } catch (error) {
-      Alert.alert('Error', 'Registration failed');
+      // Call the real registration API
+      const registrationData = {
+        name,
+        surname,
+        username,
+        email,
+        phoneNumber,
+        password,
+      };
+
+      await register(registrationData);
+
+      Alert.alert(
+        'Success!',
+        'Your account has been created successfully. Please login to continue.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('Login'),
+          },
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert(
+        'Registration Failed',
+        error.message || 'Unable to create account. Please try again.'
+      );
     } finally {
       setLoading(false);
     }

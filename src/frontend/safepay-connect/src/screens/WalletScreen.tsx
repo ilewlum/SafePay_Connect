@@ -1,233 +1,237 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, SafeAreaView, Modal, Alert } from 'react-native';
+import React, { useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  Alert,
+  RefreshControl,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Clipboard from 'expo-clipboard';
+import { useNavigation } from '@react-navigation/native';
+import { useWallet } from '../contexts/WalletContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function WalletScreen() {
-  const [isEditing, setIsEditing] = useState(false);
-  const [username] = useState('@john_doe'); // Username is read-only
-  const [fullName, setFullName] = useState('John Michael Doe');
-  const [paymentType, setPaymentType] = useState('PayShap');
-  const [bank, setBank] = useState('Standard Bank');
-  const [accountIdentifier, setAccountIdentifier] = useState('JD2024PYSHP');
-  
-  const [showPaymentTypeModal, setShowPaymentTypeModal] = useState(false);
-  const [showBankModal, setShowBankModal] = useState(false);
+  const navigation = useNavigation<any>();
+  const { wallet, loading, error, fetchWallet, clearError } = useWallet();
+  const { user } = useAuth();
+  const [refreshing, setRefreshing] = React.useState(false);
 
-  const paymentTypes = ['PayShap', 'Cash Send', 'Account Transfer'];
-  const banks = ['Standard Bank', 'Nedbank', 'Capitec', 'FNB', 'ABSA', 'Discovery Bank', 'TymeBank'];
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error);
+      clearError();
+    }
+  }, [error]);
 
-  const copyUsername = async () => {
-    await Clipboard.setStringAsync(username);
-    Alert.alert('Copied!', 'Username copied to clipboard', [{ text: 'OK' }]);
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await fetchWallet();
+    setRefreshing(false);
+  }, []);
+
+  const handleCreateWallet = () => {
+    navigation.navigate('CreateWallet');
   };
 
-  const handleSave = () => {
-    console.log('Saving details:', { fullName, paymentType, bank, accountIdentifier });
-    setIsEditing(false);
+  const handleUpdateWallet = () => {
+    navigation.navigate('UpdateWallet');
   };
 
-  const getAccountLabel = () => {
-    switch(paymentType) {
-      case 'PayShap':
-        return 'PayShap ID';
-      case 'Cash Send':
-        return 'Phone Number';
-      case 'Account Transfer':
-        return 'Account Number';
+  const formatWalletNumber = (number: string) => {
+    // Format as XXXX-XXXX-XXXX-XXXX for card numbers
+    if (number.length >= 12) {
+      return number.replace(/(.{4})/g, '$1-').replace(/-$/, '');
+    }
+    return number;
+  };
+
+  const getWalletIcon = (type: string) => {
+    switch (type?.toLowerCase()) {
+      case 'credit':
+      case 'credit card':
+        return 'card';
+      case 'debit card':
+        return 'card-outline';
+      case 'savings':
+        return 'cash';
+      case 'cheque':
+        return 'newspaper';
       default:
-        return 'Identifier';
+        return 'wallet';
     }
   };
 
-  const getAccountPlaceholder = () => {
-    switch(paymentType) {
-      case 'PayShap':
-        return 'Enter PayShap ID';
-      case 'Cash Send':
-        return 'Enter phone number';
-      case 'Account Transfer':
-        return 'Enter account number';
-      default:
-        return 'Enter identifier';
-    }
-  };
+  if (loading && !refreshing) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6C5CE7" />
+          <Text style={styles.loadingText}>Loading wallet...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!wallet) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ScrollView
+          contentContainerStyle={styles.emptyContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          <Ionicons name="wallet-outline" size={80} color="#B2BEC3" />
+          <Text style={styles.emptyTitle}>No Wallet Found</Text>
+          <Text style={styles.emptySubtitle}>
+            Create a wallet to start making secure payments
+          </Text>
+          <TouchableOpacity style={styles.createButton} onPress={handleCreateWallet}>
+            <Ionicons name="add-circle-outline" size={24} color="white" />
+            <Text style={styles.createButtonText}>Create Wallet</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <View style={styles.header}>
           <Ionicons name="wallet" size={60} color="#6C5CE7" />
           <Text style={styles.title}>My Wallet</Text>
           <Text style={styles.subtitle}>Manage your payment details</Text>
         </View>
 
-        <View style={styles.profileSection}>
-          <View style={styles.profileHeader}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {fullName.split(' ').map(n => n[0]).join('')}
-              </Text>
-            </View>
-            <TouchableOpacity 
-              style={styles.editButton}
-              onPress={() => setIsEditing(!isEditing)}
-            >
-              <Ionicons 
-                name={isEditing ? "close" : "create-outline"} 
-                size={24} 
-                color="#6C5CE7" 
+        <View style={styles.walletCard}>
+          <View style={styles.cardHeader}>
+            <View style={styles.cardIconContainer}>
+              <Ionicons
+                name={getWalletIcon(wallet.type)}
+                size={32}
+                color="#6C5CE7"
               />
-              <Text style={styles.editButtonText}>
-                {isEditing ? 'Cancel' : 'Edit'}
-              </Text>
+            </View>
+            <TouchableOpacity style={styles.editButton} onPress={handleUpdateWallet}>
+              <Ionicons name="create-outline" size={20} color="#6C5CE7" />
+              <Text style={styles.editButtonText}>Edit</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.detailsCard}>
-            <View style={styles.detailGroup}>
-              <Text style={styles.detailLabel}>Username</Text>
-              <TouchableOpacity 
-                style={styles.usernameContainer}
-                onPress={copyUsername}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.usernameText}>{username}</Text>
-                <Ionicons name="copy-outline" size={20} color="#6C5CE7" />
+          <View style={styles.cardBody}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Provider</Text>
+              <Text style={styles.detailValue}>{wallet.provider}</Text>
+            </View>
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Account Type</Text>
+              <Text style={styles.detailValue}>{wallet.type}</Text>
+            </View>
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Account Number</Text>
+              <Text style={styles.detailValueMono}>
+                {formatWalletNumber(wallet.walletNumber)}
+              </Text>
+            </View>
+
+            {user && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Account Holder</Text>
+                <Text style={styles.detailValue}>
+                  {user.name} {user.surname}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {wallet.transactions && wallet.transactions.length > 0 && (
+          <View style={styles.transactionsSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Recent Transactions</Text>
+              <TouchableOpacity>
+                <Text style={styles.viewAllText}>View All</Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.detailGroup}>
-              <Text style={styles.detailLabel}>Full Name</Text>
-              {isEditing ? (
-                <TextInput
-                  style={styles.input}
-                  value={fullName}
-                  onChangeText={setFullName}
-                  placeholder="Enter your full name"
-                  placeholderTextColor="#B2BEC3"
-                />
-              ) : (
-                <Text style={styles.detailValue}>{fullName}</Text>
-              )}
-            </View>
-
-            <View style={styles.detailGroup}>
-              <Text style={styles.detailLabel}>Payment Type</Text>
-              {isEditing ? (
-                <TouchableOpacity 
-                  style={styles.selector}
-                  onPress={() => setShowPaymentTypeModal(true)}
+            {wallet.transactions.slice(0, 5).map((transaction, index) => (
+              <TouchableOpacity
+                key={transaction.id || index}
+                style={styles.transactionItem}
+                onPress={() =>
+                  navigation.navigate('TransactionDetail', {
+                    transactionId: transaction.id,
+                  })
+                }
+              >
+                <View style={styles.transactionIcon}>
+                  <Ionicons
+                    name={
+                      transaction.senderID === user?.userId
+                        ? 'arrow-up-circle'
+                        : 'arrow-down-circle'
+                    }
+                    size={24}
+                    color={
+                      transaction.senderID === user?.userId ? '#FF6B6B' : '#4ECDC4'
+                    }
+                  />
+                </View>
+                <View style={styles.transactionDetails}>
+                  <Text style={styles.transactionTitle}>
+                    {transaction.reference || 'Payment'}
+                  </Text>
+                  <Text style={styles.transactionDate}>
+                    {new Date(transaction.timestamp).toLocaleDateString()}
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.transactionAmount,
+                    transaction.senderID === user?.userId
+                      ? styles.amountDebit
+                      : styles.amountCredit,
+                  ]}
                 >
-                  <Text style={styles.selectorText}>{paymentType}</Text>
-                  <Ionicons name="chevron-down" size={20} color="#636E72" />
-                </TouchableOpacity>
-              ) : (
-                <Text style={styles.detailValue}>{paymentType}</Text>
-              )}
-            </View>
-
-            <View style={styles.detailGroup}>
-              <Text style={styles.detailLabel}>Bank</Text>
-              {isEditing ? (
-                <TouchableOpacity 
-                  style={styles.selector}
-                  onPress={() => setShowBankModal(true)}
-                >
-                  <Text style={styles.selectorText}>{bank}</Text>
-                  <Ionicons name="chevron-down" size={20} color="#636E72" />
-                </TouchableOpacity>
-              ) : (
-                <Text style={styles.detailValue}>{bank}</Text>
-              )}
-            </View>
-
-            <View style={styles.detailGroup}>
-              <Text style={styles.detailLabel}>{getAccountLabel()}</Text>
-              {isEditing ? (
-                <TextInput
-                  style={styles.input}
-                  value={accountIdentifier}
-                  onChangeText={setAccountIdentifier}
-                  placeholder={getAccountPlaceholder()}
-                  placeholderTextColor="#B2BEC3"
-                />
-              ) : (
-                <Text style={styles.detailValue}>{accountIdentifier}</Text>
-              )}
-            </View>
+                  {transaction.senderID === user?.userId ? '-' : '+'}R
+                  {transaction.amount.toFixed(2)}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
+        )}
 
-          {isEditing && (
-            <TouchableOpacity 
-              style={styles.saveButton}
-              onPress={handleSave}
-            >
-              <Ionicons name="checkmark" size={24} color="white" />
-              <Text style={styles.saveButtonText}>Save Changes</Text>
-            </TouchableOpacity>
-          )}
+        <View style={styles.actionsSection}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('PaymentRequest')}
+          >
+            <Ionicons name="send" size={24} color="#6C5CE7" />
+            <Text style={styles.actionButtonText}>Send Money</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('TransactionVerifier')}
+          >
+            <Ionicons name="shield-checkmark" size={24} color="#6C5CE7" />
+            <Text style={styles.actionButtonText}>Verify Transaction</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Payment Type Modal */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={showPaymentTypeModal}
-          onRequestClose={() => setShowPaymentTypeModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Payment Type</Text>
-              {paymentTypes.map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={styles.modalOption}
-                  onPress={() => {
-                    setPaymentType(type);
-                    setShowPaymentTypeModal(false);
-                  }}
-                >
-                  <Text style={styles.modalOptionText}>{type}</Text>
-                  {paymentType === type && (
-                    <Ionicons name="checkmark" size={20} color="#4ECDC4" />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </Modal>
-
-        {/* Bank Modal */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={showBankModal}
-          onRequestClose={() => setShowBankModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Bank</Text>
-              <ScrollView style={styles.modalScroll}>
-                {banks.map((bankOption) => (
-                  <TouchableOpacity
-                    key={bankOption}
-                    style={styles.modalOption}
-                    onPress={() => {
-                      setBank(bankOption);
-                      setShowBankModal(false);
-                    }}
-                  >
-                    <Text style={styles.modalOptionText}>{bankOption}</Text>
-                    {bank === bankOption && (
-                      <Ionicons name="checkmark" size={20} color="#4ECDC4" />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
       </ScrollView>
     </SafeAreaView>
   );
@@ -238,18 +242,52 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F9FC',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 15,
+    fontSize: 16,
+    color: '#636E72',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2D3436',
+    marginTop: 20,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#636E72',
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 30,
+  },
+  createButton: {
+    flexDirection: 'row',
+    backgroundColor: '#6C5CE7',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  createButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 10,
+  },
   header: {
     alignItems: 'center',
-    paddingTop: 40,
-    paddingBottom: 30,
-    backgroundColor: 'white',
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 5,
+    paddingVertical: 30,
   },
   title: {
     fontSize: 28,
@@ -258,48 +296,13 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#636E72',
     marginTop: 5,
   },
-  profileSection: {
-    padding: 20,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 25,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#6C5CE7',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: 'white',
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#6C5CE720',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  editButtonText: {
-    color: '#6C5CE7',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 6,
-  },
-  detailsCard: {
+  walletCard: {
     backgroundColor: 'white',
+    marginHorizontal: 20,
     borderRadius: 20,
     padding: 20,
     shadowColor: '#000',
@@ -308,124 +311,136 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  detailGroup: {
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
   },
+  cardIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#F7F9FC',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F7F9FC',
+  },
+  editButtonText: {
+    color: '#6C5CE7',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 5,
+  },
+  cardBody: {
+    gap: 15,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F7F9FC',
+  },
   detailLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#636E72',
-    fontWeight: '500',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   detailValue: {
     fontSize: 16,
     color: '#2D3436',
     fontWeight: '600',
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    backgroundColor: '#F7F9FC',
-    borderRadius: 10,
   },
-  usernameContainer: {
+  detailValueMono: {
+    fontSize: 16,
+    color: '#2D3436',
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  transactionsSection: {
+    marginTop: 30,
+    paddingHorizontal: 20,
+  },
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    backgroundColor: '#E8E2FF',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#6C5CE720',
+    marginBottom: 15,
   },
-  usernameText: {
-    fontSize: 16,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2D3436',
+  },
+  viewAllText: {
+    fontSize: 14,
     color: '#6C5CE7',
     fontWeight: '600',
   },
-  input: {
-    fontSize: 16,
-    color: '#2D3436',
-    fontWeight: '500',
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#6C5CE7',
-  },
-  selector: {
+  transactionItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 15,
     backgroundColor: 'white',
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#6C5CE7',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 10,
   },
-  selectorText: {
-    fontSize: 16,
+  transactionIcon: {
+    marginRight: 15,
+  },
+  transactionDetails: {
+    flex: 1,
+  },
+  transactionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#2D3436',
-    fontWeight: '500',
   },
-  saveButton: {
-    backgroundColor: '#4ECDC4',
+  transactionDate: {
+    fontSize: 12,
+    color: '#636E72',
+    marginTop: 2,
+  },
+  transactionAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  amountDebit: {
+    color: '#FF6B6B',
+  },
+  amountCredit: {
+    color: '#4ECDC4',
+  },
+  actionsSection: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginTop: 30,
+    marginBottom: 20,
+    gap: 15,
+  },
+  actionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  saveButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
-    marginLeft: 10,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
     backgroundColor: 'white',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingTop: 25,
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-    maxHeight: '50%',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2D3436',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  modalScroll: {
-    maxHeight: 300,
-  },
-  modalOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#6C5CE7',
   },
-  modalOptionText: {
-    fontSize: 16,
-    color: '#2D3436',
-    fontWeight: '500',
+  actionButtonText: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6C5CE7',
   },
 });

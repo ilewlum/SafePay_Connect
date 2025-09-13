@@ -38,10 +38,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // For production flow, always start with login
-    // Uncomment the checkAuthStatus() call below to enable persistent login
-    // checkAuthStatus();
-    setLoading(false);
+    // Check for existing authentication on app start
+    checkAuthStatus();
   }, []);
 
   const checkAuthStatus = async () => {
@@ -59,41 +57,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      // Demo mode: Accept any credentials for testing
-      // In production, uncomment the API call below
+      // Call the real API
+      const response = await api.login({ email, password });
 
-      // const response = await api.login({ email, password });
-      // const userData: User = {
-      //   userId: response.userId,
-      //   username: response.username,
-      //   name: response.name,
-      //   surname: response.surname,
-      //   email: response.email,
-      // };
-
-      // Demo user for testing
       const userData: User = {
-        userId: 'demo-user-123',
-        username: email.split('@')[0],
-        name: 'Demo',
-        surname: 'User',
-        email: email,
+        userId: response.userId,
+        username: response.username,
+        name: response.name,
+        surname: response.surname,
+        email: response.email,
       };
 
+      // Store user data and token
       await AsyncStorage.setItem('user', JSON.stringify(userData));
-      await AsyncStorage.setItem('authToken', 'demo-token-123');
+      if (response.token) {
+        await AsyncStorage.setItem('authToken', response.token);
+      }
+
       setUser(userData);
-    } catch (error) {
-      throw error;
+    } catch (error: any) {
+      console.error('Login error:', error);
+      throw new Error(error.message || 'Login failed');
     }
   };
 
   const register = async (userData: any) => {
     try {
-      await api.register(userData);
-      // After successful registration, redirect to login
-    } catch (error) {
-      throw error;
+      const response = await api.register(userData);
+      // After successful registration, return success
+      // The UI will handle navigation to login
+      return response;
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      throw new Error(error.message || 'Registration failed');
     }
   };
 
@@ -101,9 +97,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await api.logout();
       await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem('authToken');
       setUser(null);
     } catch (error) {
       console.error('Failed to logout:', error);
+      // Even if API call fails, clear local state
+      await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem('authToken');
+      setUser(null);
     }
   };
 
