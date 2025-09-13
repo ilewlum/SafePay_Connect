@@ -277,9 +277,96 @@ app.get("/getTransaction/:id", authenticateToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+app.patch("/updateTransaction/:id", authenticateToken, async (req, res) => {
+  try {
+    const transactionID = req.params.id;
+    const {status } = req.body;
+
+    // Fetch the transaction
+    const transactionDoc = await db.collection("transaction").doc(transactionID).get();
+
+    if (!transactionDoc.exists) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    const transactionData = transactionDoc.data();
+    if (transactionData.recieverID !== req.user.userID) {
+      return res.status(403).json({ message: "Only the receiver can update the status" });
+    }
+
+    // Update the status
+    await db.collection("transaction").doc(transactionID).update({
+      status: status,
+      updatedAt: new Date().toISOString() // optional timestamp
+    });
+
+    res.status(200).json({
+      message: "Transaction status updated",
+      transactionID: transactionID,
+      newStatus: status
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 // #endregion
 
 // #region Message routes
+app.get("/getMessages", authenticateToken, async (req, res) => {
+  try {
+    const userID = req.user.userID;
+    // Corrected Firestore query
+    const messageQuery = await db.collection("message").where("userID", "==", userID).get();
+    if (messageQuery.empty) {
+      return res.status(404).json({ message: "No messages from user" });
+    }
+
+    // Extract messages
+    const messages = messageQuery.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    // Return JSON
+    res.status(200).json({ messages });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+// #endregion
+
+// #region AI endpoint
+app.post("/Analyze", authenticateToken, async (req, res) => {
+    try {
+        const {message} = req.body;
+        const userID = req.user.userID;
+        const response = await fetch('http://localhost:8080/api/ai-scam/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+        
+        const data = await response.json();
+        await db.collection("message").doc(uuidv4()).set({
+          userID,
+          isScam : data.isScam,
+          confidence: data.confidence,
+          riskLevel: data.riskLevel,
+          detectedPatterns: data.detectedPatterns,
+          recommendation: data.recommendation,
+          analysisType: data.analysisType
+        })
+
+        res.status(201).json(data);   
+    } 
+    catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+//#endregion
 
 // #region Helper Functions
 function authTokenGenerator(id, name, surname){
