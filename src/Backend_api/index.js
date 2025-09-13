@@ -1,6 +1,9 @@
 import express from "express";
 import admin from "firebase-admin";
 import { v4 as uuidv4 } from "uuid";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+
 
 // #region Load environment variables
 const app = express();
@@ -189,14 +192,90 @@ app.patch("/updateWallet", authenticateToken, async (req, res) => {
 // #endregion
 
 // #region Transaction routes
+app.post("/createTransaction", authenticateToken, async (req, res) => {
+    try {
+        const {username,amount , reference } = req.body;
+        const senderID = req.user.userID;
+        const reciever = await db.collection("users").where("username", "==", username).get();;
+        if(reciever.empty){
+            return res.status(400).json({ message: 'Invalid User' });
+        }
+        const recieverID = reciever.docs[0].id;
 
+        // get sender and reciever wallets
+        const senderWallet = await db.collection("wallet").where("userID", "==", senderID).get();
+        if (senderWallet.empty) {
+          return res.status(400).json({ message: 'Sender has no wallet' });
+        }
+        const SenderWalletID = senderWallet.docs[0].id;
+
+        const recipientWallet = await db.collection("wallet").where("userID", "==", recieverID).get();
+        if (recipientWallet.empty) {
+          return res.status(400).json({ message: 'Recipient has no wallet' });
+        }
+        const recipientWalletID = recipientWallet.docs[0].id;
+
+        const transactionID = uuidv4();
+        await db.collection("transaction").doc(transactionID).set({
+            senderID: senderID,
+            recieverID: recieverID,
+            type: senderWallet.docs[0].data().type,
+            walletNumber: senderWallet.docs[0].data().walletNumber,
+            amount : amount,
+            reference,
+            timestamp: new Date().toISOString(),
+            status: "pending",
+        })
+        await db.collection("wallet").doc(SenderWalletID).update({
+          history: admin.firestore.FieldValue.arrayUnion(transactionID)
+        });
+        await db.collection("wallet").doc(recipientWalletID).update({
+          history: admin.firestore.FieldValue.arrayUnion(transactionID)
+        });
+
+        res.status(201).json({
+            message: "Transaction Created",
+            status: "pending",
+        });    
+    } 
+    catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 // #endregion
 
 // #region Message routes
 
-// #endregion
+// #region Helper Functions
+function authTokenGenerator(id, name, surname){
+    const payload = {
+        userID : id,
+        name : name,
+        surname: surname
+    };
 
-// #endregion
+    const authToken = jwt.sign(payload, privateKey, {expiresIn: '24h'});
+    return authToken;
+}
+
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // expects: "Bearer <token>"
+
+  if (!token) {
+    return res.status(401).json({ message: "Access denied. Token missing." });
+  }
+
+  jwt.verify(token, privateKey, (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: "Invalid or expired token." });
+    }
+    req.user = user; // attach user info to request
+    next();
+  });
+}
+//#endregion
+
 
 // Start the server
 
