@@ -2,9 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../contexts/AuthContext';
 
 const HomeScreen = () => {
   const navigation = useNavigation<any>();
+  const { user, logout } = useAuth();
   
   const recentTransactions = [
     { id: 1, merchant: 'Shoprite', amount: 'R 450.00', time: '2 hours ago', status: 'verified' },
@@ -24,13 +26,18 @@ const HomeScreen = () => {
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <View>
-              <Text style={styles.greeting}>Welcome back!</Text>
+              <Text style={styles.greeting}>Welcome back, {user?.name || 'User'}!</Text>
               <Text style={styles.title}>SafePay Connect</Text>
             </View>
-            <TouchableOpacity style={styles.notificationButton}>
-              <Ionicons name="notifications-outline" size={24} color="#2D3436" />
-              <View style={styles.notificationBadge} />
-            </TouchableOpacity>
+            <View style={styles.headerRight}>
+              <TouchableOpacity style={styles.notificationButton}>
+                <Ionicons name="notifications-outline" size={24} color="#2D3436" />
+                <View style={styles.notificationBadge} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+                <Ionicons name="log-out-outline" size={24} color="#6C5CE7" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -148,6 +155,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2D3436',
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   notificationButton: {
     position: 'relative',
     padding: 8,
@@ -160,6 +171,10 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: '#6C5CE7',
+  },
+  logoutButton: {
+    padding: 8,
+    marginLeft: 8,
   },
   statsGrid: {
     flexDirection: 'row',

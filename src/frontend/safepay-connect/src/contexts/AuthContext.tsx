@@ -38,7 +38,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkAuthStatus();
+    // For production flow, always start with login
+    // Uncomment the checkAuthStatus() call below to enable persistent login
+    // checkAuthStatus();
+    setLoading(false);
   }, []);
 
   const checkAuthStatus = async () => {
@@ -56,16 +59,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await api.login({ email, password });
+      // Demo mode: Accept any credentials for testing
+      // In production, uncomment the API call below
+
+      // const response = await api.login({ email, password });
+      // const userData: User = {
+      //   userId: response.userId,
+      //   username: response.username,
+      //   name: response.name,
+      //   surname: response.surname,
+      //   email: response.email,
+      // };
+
+      // Demo user for testing
       const userData: User = {
-        userId: response.userId,
-        username: response.username,
-        name: response.name,
-        surname: response.surname,
-        email: response.email,
+        userId: 'demo-user-123',
+        username: email.split('@')[0],
+        name: 'Demo',
+        surname: 'User',
+        email: email,
       };
 
       await AsyncStorage.setItem('user', JSON.stringify(userData));
+      await AsyncStorage.setItem('authToken', 'demo-token-123');
       setUser(userData);
     } catch (error) {
       throw error;

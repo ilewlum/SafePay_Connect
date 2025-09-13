@@ -1,4 +1,5 @@
 import React from 'react';
+import { View, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -109,8 +110,13 @@ const AppNavigator = () => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    // You can add a splash screen here
-    return null;
+    // Simple loading screen while checking auth status
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7F9FC' }}>
+        <Ionicons name="shield-checkmark" size={60} color="#6C5CE7" />
+        <Text style={{ marginTop: 10, fontSize: 16, color: '#636E72' }}>SafePay Connect</Text>
+      </View>
+    );
   }
 
   return (

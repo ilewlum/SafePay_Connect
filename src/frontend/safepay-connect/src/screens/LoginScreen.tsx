@@ -12,9 +12,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = () => {
   const navigation = useNavigation<any>();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -28,15 +31,22 @@ const LoginScreen = () => {
 
     setLoading(true);
     try {
-      // API call will be implemented with integration
-      // const response = await api.login(email, password);
-      Alert.alert('Success', 'Login functionality will be connected to backend');
-      // navigation.navigate('Home');
+      // For demo purposes, accept any credentials
+      // In production, this will connect to the backend
+      await login(email, password);
+      Alert.alert('Welcome!', 'Demo login successful. In production, this will connect to the backend.');
     } catch (error) {
-      Alert.alert('Error', 'Login failed');
+      Alert.alert('Error', 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDemoLogin = async () => {
+    setEmail('demo@safepay.com');
+    setPassword('demo123');
+    // Auto-fill the form and let user click login
+    Alert.alert('Demo Credentials', 'Email and password have been filled. Click Login to proceed.');
   };
 
   return (
@@ -93,6 +103,13 @@ const LoginScreen = () => {
               <Text style={styles.loginButtonText}>
                 {loading ? 'Logging in...' : 'Login'}
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.demoButton}
+              onPress={handleDemoLogin}
+            >
+              <Text style={styles.demoButtonText}>Fill Demo Credentials</Text>
             </TouchableOpacity>
 
             <View style={styles.footer}>
@@ -176,6 +193,21 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  demoButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#4ECDC4',
+    borderRadius: 12,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  demoButtonText: {
+    color: '#4ECDC4',
     fontSize: 16,
     fontWeight: '600',
   },
