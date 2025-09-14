@@ -22,7 +22,7 @@ const CreateWalletScreen = () => {
   const [loading, setLoading] = useState(false);
 
   const walletProviders = ['FNB', 'Standard Bank', 'Capitec', 'Nedbank', 'ABSA'];
-  const walletTypes = ['Savings', 'Cheque', 'Credit', 'Debit Card'];
+  const walletTypes = ['Savings', 'CashSend', 'paySharp', 'E-wallet'];
 
   const handleCreateWallet = async () => {
     if (!provider || !type || !walletNumber) {

@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import cors from "cors";
 import dotenv from "dotenv";
+import { type } from "os";
 
 // #region Load environment variables
 dotenv.config();
@@ -162,6 +163,7 @@ app.get("/viewWallet", authenticateToken, async (req, res) => {
     //Return wallet information
     res.status(200).json({
       provider: walletData.provider,
+      type: walletData.type,
       walletNumber: walletData.walletNumber,
       transactions
     });
@@ -337,7 +339,7 @@ app.get("/getMessages", authenticateToken, async (req, res) => {
 // #endregion
 
 // #region AI endpoint
-app.post("/Analyze", authenticateToken, async (req, res) => {
+app.post("/analyze", authenticateToken, async (req, res) => {
     try {
       const {message} = req.body;
       const userID = req.user.userID;
@@ -350,6 +352,7 @@ app.post("/Analyze", authenticateToken, async (req, res) => {
       const data = await response.json();
       await db.collection("message").doc(uuidv4()).set({
         userID,
+        message,
         isScam : data.isScam,
         confidence: data.confidence,
         riskLevel: data.riskLevel,

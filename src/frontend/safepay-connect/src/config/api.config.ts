@@ -40,6 +40,7 @@ export const API_ENDPOINTS = {
   CREATE_TRANSACTION: '/createTransaction',
   GET_TRANSACTION: '/getTransaction',
 
+  //message
   ANALYZE : '/analyze',
 };
 

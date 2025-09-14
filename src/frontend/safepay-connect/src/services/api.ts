@@ -27,6 +27,10 @@ interface TransactionData {
   reference: string;
 }
 
+interface AnalyzeRequestData {
+  message: string;
+}
+
 class ApiService {
   private token: string | null = null;
 
@@ -208,6 +212,25 @@ class ApiService {
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Failed to fetch transaction');
+      }
+
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async analyzeMessage(message: AnalyzeRequestData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ANALYZE}`, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(message),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to analyze message');
       }
 
       return await response.json();
