@@ -10,8 +10,20 @@ Follow the steps below to set up and run the project. (Example)
 
 ## 📦 Requirements
 ``` c
-// TODO: List software, runtimes, frameworks, and or dependencies
-// along with instructions on how to set each up.
+Node.js (>= v18)
+npm
+Expo CLI (for React Native mobile app)
+Firebase / Firestore
+
+framworks : 
+express → Backend web framework
+dotenv → Manage environment variables
+firebase-admin → Access Firestore from backend
+jsonwebtoken → Token-based authentication
+bcrypt → Secure password hashing
+uuid → Generate unique IDs
+axios → For making HTTP requests
+cors → Handle cross-origin requests
 ```
 - Example: Node.js v18+
 - Example: Python 3.10
@@ -22,14 +34,20 @@ Follow the steps below to set up and run the project. (Example)
 ## ⚙️ Installation
 ``` bash
 # Clone the repository
-git clone <your-repo-url>
-cd <repo-name>
+git clone https://github.com/ilewlum/SafePay_Connect.git
+cd https://github.com/ilewlum/SafePay_Connect.git
 
 # Install dependencies
-<insert command here>
+npm install
 ```
 
 ## ▶️ Running the Project
 ``` bash
-<insert run command here> # Or an explanation on what to do
+download endroid emulator sdk
+run: following command
+
+npm run dev:backend
+npm run dev:frontend
+
+press a or scan QR-CODE
 ```
