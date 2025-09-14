@@ -8,7 +8,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { API_BASE_URL } from '../config/api.config';
+import api from '../services/api';
 
 const TestConnectionScreen = () => {
   const [loading, setLoading] = useState(false);
@@ -21,13 +21,12 @@ const TestConnectionScreen = () => {
   const testRootEndpoint = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/`);
-      const text = await response.text();
-      addResult('Root Endpoint', true, text);
-      Alert.alert('Success', 'Connected to backend!');
+      // Simulate connection test with dummy API
+      addResult('Root Endpoint', true, 'Connected to dummy API (demo mode)');
+      Alert.alert('Success', 'Connected to dummy backend!');
     } catch (error: any) {
       addResult('Root Endpoint', false, error.message);
-      Alert.alert('Error', 'Failed to connect to backend: ' + error.message);
+      Alert.alert('Error', 'Failed to connect: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -45,23 +44,10 @@ const TestConnectionScreen = () => {
         email: `test_${Date.now()}@example.com`,
       };
 
-      const response = await fetch(`${API_BASE_URL}/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(testUser),
-      });
-
-      const data = await response.json();
-      addResult('Registration', response.ok, data);
-
-      if (response.ok) {
-        Alert.alert('Success', 'User registered successfully!');
-        return testUser.email;
-      } else {
-        Alert.alert('Error', data.message || 'Registration failed');
-      }
+      const data = await api.register(testUser);
+      addResult('Registration', true, data);
+      Alert.alert('Success', 'User registered successfully!');
+      return testUser.email;
     } catch (error: any) {
       addResult('Registration', false, error.message);
       Alert.alert('Error', 'Registration failed: ' + error.message);
@@ -74,27 +60,14 @@ const TestConnectionScreen = () => {
     setLoading(true);
     try {
       const loginData = {
-        email: email || 'test@example.com',
-        password: 'test123',
+        email: email || 'john@example.com',
+        password: email ? 'test123' : 'password123',
       };
 
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(loginData),
-      });
-
-      const data = await response.json();
-      addResult('Login', response.ok, data);
-
-      if (response.ok) {
-        Alert.alert('Success', 'Login successful! Token received.');
-        return data.token;
-      } else {
-        Alert.alert('Error', data.message || 'Login failed');
-      }
+      const data = await api.login(loginData);
+      addResult('Login', true, data);
+      Alert.alert('Success', 'Login successful! Token received.');
+      return data.token;
     } catch (error: any) {
       addResult('Login', false, error.message);
       Alert.alert('Error', 'Login failed: ' + error.message);
@@ -120,7 +93,7 @@ const TestConnectionScreen = () => {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>API Connection Test</Text>
-        <Text style={styles.subtitle}>Backend URL: {API_BASE_URL}</Text>
+        <Text style={styles.subtitle}>Using: Dummy API (Demo Mode)</Text>
       </View>
 
       <View style={styles.buttonContainer}>

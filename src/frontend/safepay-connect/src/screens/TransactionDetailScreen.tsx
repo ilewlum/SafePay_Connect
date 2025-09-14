@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
+import { View,
   Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
+  StyleSheet, ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+  ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTransaction } from '../contexts/TransactionContext';

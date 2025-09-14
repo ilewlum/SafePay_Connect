@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
-import {
-  View,
+import { View,
   Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
-  SafeAreaView,
-  ActivityIndicator
-} from 'react-native';
+  Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 const ScamDetectorScreen = () => {

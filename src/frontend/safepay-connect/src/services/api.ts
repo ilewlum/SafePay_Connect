@@ -250,4 +250,8 @@ class ApiService {
   }
 }
 
-export default new ApiService();
+// export default new ApiService();
+
+// Import dummy API for demo purposes
+import dummyApi from './dummyApi';
+export default dummyApi;

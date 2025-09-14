@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
-import {
-  View,
+import { View,
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-  Alert,
-} from 'react-native';
+  TouchableOpacity, ScrollView,
+  Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useWallet } from '../contexts/WalletContext';

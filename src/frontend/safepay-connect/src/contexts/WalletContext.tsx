@@ -64,7 +64,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     setError(null);
     try {
       const response = await api.viewWallet();
-      setWallet(response);
+      // Handle dummy API response format
+      const walletData = response.wallet || response;
+      setWallet(walletData);
     } catch (error: any) {
       // If wallet doesn't exist, that's okay
       if (error.message?.includes('404') || error.message?.includes('not found')) {

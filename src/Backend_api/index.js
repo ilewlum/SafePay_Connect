@@ -6,6 +6,8 @@ import bcrypt from "bcrypt";
 import cors from "cors";
 import dotenv from "dotenv";
 import { type } from "os";
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
 // #region Load environment variables
 dotenv.config();
@@ -17,7 +19,10 @@ const privateKey = process.env.PRIVATE_KEY;
 // #endregion
 
 // #region Initialize Firestore with service account
-const serviceAccountPath = JSON.parse(process.env.FIREBASE_CREDENTIALS_JSON);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const serviceAccountPath = join(__dirname, 'safepay-connect-firebase-adminsdk-fbsvc-8175ce9093.json');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccountPath),
 });

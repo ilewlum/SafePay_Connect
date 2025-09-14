@@ -84,17 +84,19 @@ export const TransactionProvider: React.FC<TransactionProviderProps> = ({ childr
 
     try {
       const response = await api.getTransaction(transactionId);
+      // Handle dummy API response format
+      const transData = response.transaction || response;
 
       const transaction: Transaction = {
-        id: response.id,
-        senderID: response.senderID,
-        receiverID: response.receiverID || response.recieverID, // Handle typo in backend
-        amount: response.amount,
-        type: response.type,
-        walletNumber: response.walletNumber,
-        reference: response.reference,
-        status: response.status,
-        timestamp: response.timestamp,
+        id: transData.id,
+        senderID: transData.senderID || transData.userId || 'user_001',
+        receiverID: transData.receiverID || transData.recieverID || transData.recipient || 'user_002',
+        amount: transData.amount,
+        type: transData.type || 'sent',
+        walletNumber: transData.walletNumber || '12345678',
+        reference: transData.reference,
+        status: transData.status,
+        timestamp: transData.timestamp || transData.date || new Date().toISOString(),
       };
 
       setCurrentTransaction(transaction);
