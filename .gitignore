@@ -42,6 +42,8 @@ bin/
 # ==========================
 # Node.js / JavaScript
 src/Backend_api/node_modules/
+node_modules/
+src/frontend/safepay-connect/node_modules/
 src/Backend_api/safepay-connect-firebase-adminsdk-fbsvc-8175ce9093.json
 npm-debug.log*
 yarn-debug.log*

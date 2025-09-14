@@ -6,7 +6,6 @@ import bcrypt from "bcrypt";
 import cors from "cors";
 import dotenv from "dotenv";
 
-
 // #region Load environment variables
 dotenv.config();
 const app = express();
@@ -16,7 +15,7 @@ const port = process.env.PORT || 3000;
 const privateKey = process.env.PRIVATE_KEY;
 // #endregion
 
-// #regionInitialize Firestore with service account
+// #region Initialize Firestore with service account
 const serviceAccountPath = JSON.parse(process.env.FIREBASE_CREDENTIALS_JSON);
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccountPath),
@@ -24,53 +23,52 @@ admin.initializeApp({
 
 const db = admin.firestore();
 // #endregion
-// #region Routes
 
+// #region Routes
 // #region User routes
 app.get("/", (req, res) => {
   res.send("Express + Firestore API running 🚀");
 });
 
 app.post("/register", async (req, res) => {
-    try {
-        const { name, surname, username, phoneNumber, password, email } = req.body;
-        //  Check if email already exists
-        const userQuery = await db.collection("users").where("username", "==", username).get();
-        if (!userQuery.empty) {
-            return res.status(400).json({ message: 'User already exists' });
-        }
+  try {
+    const { name, surname, username, phoneNumber, password, email } = req.body;
+    //  Check if email already exists
+    const userQuery = await db.collection("users").where("username", "==", username).get();
+    if (!userQuery.empty) {
+        return res.status(400).json({ message: 'User already exists' });
+    }
 
-        // Hash the password
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // Hash the password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        // Create user document
-        const userId = uuidv4();
-        await db.collection("users").doc(userId).set({
-        userId, // optional, since it's also the doc ID
-        name,
-        surname,
-        username,
-        phoneNumber,
-        email
-        });
+    // Create user document
+    const userId = uuidv4();
+    await db.collection("users").doc(userId).set({
+    userId, // optional, since it's also the doc ID
+    name,
+    surname,
+    username,
+    phoneNumber,
+    email
+    });
 
-        // Generate auth token
-        const token = authTokenGenerator(userId, name, surname);
+    // Generate auth token
+    const token = authTokenGenerator(userId, name, surname);
 
-        // Store security info separately
-        await db.collection("keys").doc(userId).set({
-        userId,
-        password: hashedPassword, // hashed password
-        authToken: token
-        });
+    // Store security info separately
+    await db.collection("keys").doc(userId).set({
+    userId,
+    password: hashedPassword, // hashed password
+    authToken: token
+    });
 
-        // Send response to client
-        res.status(201).json("User has been registered");
-        console.log("User: ", userId, " Has Registered");
-
-    } catch (error) {
-    res.status(500).json({ error: error.message });
+    // Send response to client
+    res.status(201).json("User has been registered");
+    console.log("User: ", userId, " Has Registered");
+  } catch (error) {
+  res.status(500).json({ error: error.message });
   }
 });
 
@@ -199,49 +197,49 @@ app.patch("/updateWallet", authenticateToken, async (req, res) => {
 // #region Transaction routes
 app.post("/createTransaction", authenticateToken, async (req, res) => {
     try {
-        const {username,amount , reference } = req.body;
-        const senderID = req.user.userID;
-        const reciever = await db.collection("users").where("username", "==", username).get();;
-        if(reciever.empty){
-            return res.status(400).json({ message: 'Invalid User' });
-        }
-        const recieverID = reciever.docs[0].id;
+      const {username,amount , reference } = req.body;
+      const senderID = req.user.userID;
+      const reciever = await db.collection("users").where("username", "==", username).get();;
+      if(reciever.empty){
+        return res.status(400).json({ message: 'Invalid User' });
+      }
+      const recieverID = reciever.docs[0].id;
 
-        // get sender and reciever wallets
-        const senderWallet = await db.collection("wallet").where("userID", "==", senderID).get();
-        if (senderWallet.empty) {
-          return res.status(400).json({ message: 'Sender has no wallet' });
-        }
-        const SenderWalletID = senderWallet.docs[0].id;
+      // get sender and reciever wallets
+      const senderWallet = await db.collection("wallet").where("userID", "==", senderID).get();
+      if (senderWallet.empty) {
+        return res.status(400).json({ message: 'Sender has no wallet' });
+      }
+      const SenderWalletID = senderWallet.docs[0].id;
 
-        const recipientWallet = await db.collection("wallet").where("userID", "==", recieverID).get();
-        if (recipientWallet.empty) {
-          return res.status(400).json({ message: 'Recipient has no wallet' });
-        }
-        const recipientWalletID = recipientWallet.docs[0].id;
+      const recipientWallet = await db.collection("wallet").where("userID", "==", recieverID).get();
+      if (recipientWallet.empty) {
+        return res.status(400).json({ message: 'Recipient has no wallet' });
+      }
+      const recipientWalletID = recipientWallet.docs[0].id;
 
-        const transactionID = uuidv4();
-        await db.collection("transaction").doc(transactionID).set({
-            senderID: senderID,
-            recieverID: recieverID,
-            type: senderWallet.docs[0].data().type,
-            walletNumber: senderWallet.docs[0].data().walletNumber,
-            amount : amount,
-            reference,
-            timestamp: new Date().toISOString(),
-            status: "pending",
-        })
-        await db.collection("wallet").doc(SenderWalletID).update({
-          history: admin.firestore.FieldValue.arrayUnion(transactionID)
-        });
-        await db.collection("wallet").doc(recipientWalletID).update({
-          history: admin.firestore.FieldValue.arrayUnion(transactionID)
-        });
+      const transactionID = uuidv4();
+      await db.collection("transaction").doc(transactionID).set({
+          senderID: senderID,
+          recieverID: recieverID,
+          type: senderWallet.docs[0].data().type,
+          walletNumber: senderWallet.docs[0].data().walletNumber,
+          amount : amount,
+          reference,
+          timestamp: new Date().toISOString(),
+          status: "pending",
+      })
+      await db.collection("wallet").doc(SenderWalletID).update({
+        history: admin.firestore.FieldValue.arrayUnion(transactionID)
+      });
+      await db.collection("wallet").doc(recipientWalletID).update({
+        history: admin.firestore.FieldValue.arrayUnion(transactionID)
+      });
 
-        res.status(201).json({
-            message: "Transaction Created",
-            status: "pending",
-        });    
+      res.status(201).json({
+          message: "Transaction Created",
+          status: "pending",
+      });    
     } 
     catch (error) {
     res.status(500).json({ error: error.message });
@@ -341,26 +339,26 @@ app.get("/getMessages", authenticateToken, async (req, res) => {
 // #region AI endpoint
 app.post("/Analyze", authenticateToken, async (req, res) => {
     try {
-        const {message} = req.body;
-        const userID = req.user.userID;
-        const response = await fetch('http://localhost:8080/api/ai-scam/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message })
-        });
-        
-        const data = await response.json();
-        await db.collection("message").doc(uuidv4()).set({
-          userID,
-          isScam : data.isScam,
-          confidence: data.confidence,
-          riskLevel: data.riskLevel,
-          detectedPatterns: data.detectedPatterns,
-          recommendation: data.recommendation,
-          analysisType: data.analysisType
-        })
+      const {message} = req.body;
+      const userID = req.user.userID;
+      const response = await fetch('http://localhost:8080/api/ai-scam/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      });
+      
+      const data = await response.json();
+      await db.collection("message").doc(uuidv4()).set({
+        userID,
+        isScam : data.isScam,
+        confidence: data.confidence,
+        riskLevel: data.riskLevel,
+        detectedPatterns: data.detectedPatterns,
+        recommendation: data.recommendation,
+        analysisType: data.analysisType
+      })
 
-        res.status(201).json(data);   
+      res.status(201).json(data);   
     } 
     catch (error) {
     res.status(500).json({ error: error.message });
@@ -397,10 +395,9 @@ function authenticateToken(req, res, next) {
   });
 }
 //#endregion
-
+// #endregion
 
 // Start the server
-
 app.listen(port, () => {
   console.log(`Server is running on port  http://localhost:${port}`);
 });

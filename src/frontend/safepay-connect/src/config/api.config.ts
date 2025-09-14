@@ -39,6 +39,8 @@ export const API_ENDPOINTS = {
   // Transactions
   CREATE_TRANSACTION: '/createTransaction',
   GET_TRANSACTION: '/getTransaction',
+
+  ANALYZE : '/analyze',
 };
 
 export const API_CONFIG = {
